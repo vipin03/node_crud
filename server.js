@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 
 const bodyParser = require('body-parser');
-const bcrypt =  require('bcryptjs');
+
 
 let userRouter = require("./routes/users");
 

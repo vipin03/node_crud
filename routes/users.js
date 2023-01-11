@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bootstrap = require("../bootstarp");
+const userController = require("../controllers/UsersController");
 const mysql = require('mysql');
 // bootstrap db and mysql
 let dbConn = bootstrap.dbConn(mysql);
@@ -37,84 +38,55 @@ router.post('/login',(req,res)=>{
 });
 
 
-router.get('/',(req,res)=>{
-
-    dbConn.query("select * from users",(error, results, fields)=>{
-        if(error){
-            throw error;
-        }
-        return res.send({"status":true,"message":"Data fetch success","results":results});
+router.get('/', (req,res)=>{
+    let data=  userController.getAllUserV2(dbConn);
+    data.then((resData)=>{
+        return res.send({"status":true,"data":resData});
+    }).catch((err)=>{
+        console.log("in catch");
     });
 });
 
 router.post('/',(req,res)=>{
-
-    let currentP = req.body.password;
-    let hashPass = bcrypt.hashSync(req.body.password, 8);
-    dbConn.query(`INSERT INTO users (name, email,password) VALUES
-    ('${req.body.name}', '${req.body.email}','${hashPass}')`,(error, results, fields)=>{
-        if(error){
-            throw error;
-        }
-        return res.send({"status":true,"message":"Data Insert success","results":results});
-    });
+    let data = userController.createUser(dbConn,req);
+    data.then((result)=>{
+        return res.send({"status":false,"message":"Successfully created"});
+    }).catch((err)=>{
+        console.log(err);
+        return res.send({"status":false,"message":"Internal Server Error"});
+    })
 });
 
 router.get('/:id',(req,res)=>{
-    //validate
+
+    let data = userController.getSingleUser(dbConn,req);
+    data.then((result)=>{
+        return res.send({"status":true,"data":result});
+    }).catch((err)=>{
+        return res.send({"status":false,"message":err.message});
+    })
     
-    dbConn.query(`select * from users where id =${req.params.id}`,(error, results, fields)=>{
-        if(error){
-            throw error;
-        }
-        let reqToken = req.headers.api_token;
-        if(reqToken != results[0]['api_token']){
-            return res.send({"status":false,"message":"Your are not autoried to access this"})
-        }
-        return res.send({"status":true,"message":"Data fetch success","results":results});
-    });
 });
 
 router.put('/',(req,res)=>{
 
-    dbConn.query(`select * from users where id =${req.body.id}`,(error, results, fields)=>{
-        if(error){
-            throw error;
-        }
-        let reqToken = req.headers.api_token;
-        if(reqToken != results[0]['api_token']){
-            return res.send({"status":false,"message":"Your are not autoried to access this"})
-        }
-
-        dbConn.query(`update users set name = '${req.body.name}' where id =${req.body.id}`,(error, results, fields)=>{
-            if(error){
-                throw error;
-            }
-            return res.send({"status":true,"message":"Data update success"});
-        });
-    });
+    let data = userController.updateUser(dbConn,req);
+    data.then((result)=>{
+        return res.send({"status":true});
+    }).catch((err)=>{
+        return res.send(err);
+    })
 
 });
 
 router.delete('/',(req,res)=>{
     
-    dbConn.query(`select * from users where id =${req.body.id}`,(error, results, fields)=>{
-        if(error){
-            throw error;
-        }
-        let reqToken = req.headers.api_token;
-        if(reqToken != results[0]['api_token']){
-            return res.send({"status":false,"message":"Your are not autoried to access this"})
-        }
-
-        dbConn.query(`DELETE FROM users WHERE id = ${req.body.id}`,(error, results, fields)=>{
-            if(error){
-                throw error;
-            }
-            return res.send({"status":true,"message":"Data delete success"});
-        });
-    });
-    
+    let data = userController.deleteUser(dbConn,req);
+    data.then((result)=>{
+        return res.send({"status":true});
+    }).catch((err)=>{
+        return res.send(err);
+    })
 });
 
 module.exports = router;
